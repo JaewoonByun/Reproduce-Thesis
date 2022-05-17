@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 import pytorch_model_summary
@@ -14,24 +13,25 @@ root_dir = os.path.dirname(os.path.realpath("main.py"))
 sys.path.insert(0, root_dir)
 
 from dataset.cifar10 import get_dataloader_cifar10, cls_cifar10
-from utils.utils import init_weights
+from utils.utils import init_weights, get_official_pretrained_vit_models
 from train_eval.train_eval import train_vit, eval_vit
-
 from vision_transformer import VisionTransformer
 
 
 # hyper-parameters
-DEBUG_MODE=False#True
+DEBUG_MODE = False#True
+USE_OFFICIAL_MODEL = False#True
+offical_vit_name = "B_16_imagenet1k"
 
-epoch = 1#20
+epoch = 20
 batch_size = 100
 learning_rate = 2e-4 # 2*10^-4
 weight_decay = 0.1
 momentum = 0.9
 
-img_width = 32#384#32
-img_height = 32#384#32
-img_patch_size =16
+img_width = 32#384
+img_height = 32#384
+img_patch_size = 16
 
 N_CLASSES = len(cls_cifar10)
 HIDDEN_DIM = 768
@@ -53,16 +53,21 @@ if __name__ == "__main__":
     trainloader = get_dataloader_cifar10(opt_data="train", batch_size=batch_size)
     testloader = get_dataloader_cifar10(opt_data="test", batch_size=batch_size)
 
-    model = VisionTransformer(N_CLASSES,
-                            ENC_HEADS,
-                            ENC_LAYERS,
-                            HIDDEN_DIM,
-                            MLP_HIDDEN_DIM,
-                            img_width,
-                            img_height,
-                            patch_size=img_patch_size,
-                            dropout_rto=ENC_DROPOUT,
-                            device=device)
+    # In order to compare '#' of parameters with offical ViT models
+    if USE_OFFICIAL_MODEL:
+        model = get_official_pretrained_vit_models(offical_vit_name, N_CLASSES, img_width)
+    else: # 
+        model = VisionTransformer(N_CLASSES,
+                                ENC_HEADS,
+                                ENC_LAYERS,
+                                HIDDEN_DIM,
+                                MLP_HIDDEN_DIM,
+                                img_width,
+                                img_height,
+                                patch_size=img_patch_size,
+                                dropout_rto=ENC_DROPOUT,
+                                device=device)
+
     # init model weights
     model.apply(init_weights)
 
