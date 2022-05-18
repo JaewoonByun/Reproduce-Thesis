@@ -1,12 +1,24 @@
 import argparse
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        import argparse
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def get_vit_args():
     # create the parser
     arg_parser = argparse.ArgumentParser()
 
     # hyper-parameter for debugging
-    arg_parser.add_argument('--debug_mode', type=bool, default=False, help='in order to count "#" of model parameters')
+    arg_parser.add_argument('--debug_mode', type=str2bool, default=False, help='in order to count "#" of model parameters')
     arg_parser.add_argument('--official_name', type=str, default='',
                             help='use official vit model such as \
                             "B_16", "B_32", "L_16", "L_32", "B_16_imagenet1k", "B_32_imagenet1k", "L_16_imagenet1k", "L_32_imagenet1k"')
@@ -28,7 +40,7 @@ def get_vit_args():
     arg_parser.add_argument('--n_layers', type=int, default=12)
     arg_parser.add_argument('--n_heads', type=int, default=12)
     # hyper-parameter for others
-    arg_parser.add_argument('--gpu_mode', type=bool, default=True, help='force to use "cpu"')
+    arg_parser.add_argument('--gpu_mode', type=str2bool, default=True, help='force to use "cpu"')
 
     args = arg_parser.parse_args()
     

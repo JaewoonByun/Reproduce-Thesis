@@ -9,12 +9,15 @@ import platform
 root_dir = os.path.dirname(os.path.realpath("main.py"))
 sys.path.insert(0, root_dir)
 
-from utils.utils import get_one_hot_encoding
+from utils.utils import logger_vit, get_one_hot_encoding
 
 if platform.system() == 'Windows':
     MODEL_PATH = 'D:/.data/models_pth/vit_reproduce.pt'
 else: # ubuntu
     MODEL_PATH = '/home/jw/vscode/model_pth/vit_reproduce.pt'
+
+
+logger = logger_vit()
 
 
 def train_vit(model,
@@ -28,6 +31,7 @@ def train_vit(model,
               device='cpu'):
 
     print('training vit is started !')
+    logger.write_log('training vit is started !')
     train_start = time.time()
     for epc in range(epoch+1):
         for batch_idx, (img, label) in enumerate(train_loader):
@@ -44,16 +48,19 @@ def train_vit(model,
 
             if (batch_idx*batch_size) % 10000 == 0:
                 print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, batch:{batch_idx*batch_size} loss:{criterion.item()}')
+                logger.write_log(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, batch:{batch_idx*batch_size} loss:{criterion.item()}')
         #print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, loss:{criterion.item()}')
         lr_scheduler.step()
     torch.save(model.state_dict(), MODEL_PATH)
-    print("total training time: {0}".format(time.time()-train_start))
+    print('total training time: {0}'.format(time.time()-train_start))
+    logger.write_log('total training time: {0}'.format(time.time()-train_start))
     
 def eval_vit(model,
              test_loader,
              device='cpu'):
 
     print('evaluation vit is start !')
+    logger.write_log('evaluation vit is start !')
     eval_start = time.time()
     true_cnt = 0
     total_cnt = 0
@@ -70,6 +77,8 @@ def eval_vit(model,
             true_cnt += (torch.argmax(prediction, dim=1) == label).sum()
             total_cnt += len(label)
     
-    print("evaluation time: {0}".format(time.time()-eval_start))
+    print('evaluation time: {0}'.format(time.time()-eval_start))
     print('accuracy: {0}, true: {1}, total: {2}'.format(true_cnt/total_cnt, true_cnt, total_cnt))
+    logger.write_log('evaluation time: {0}'.format(time.time()-eval_start))
+    logger.write_log('accuracy: {0}, true: {1}, total: {2}'.format(true_cnt/total_cnt, true_cnt, total_cnt))
 

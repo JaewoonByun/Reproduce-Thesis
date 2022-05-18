@@ -1,5 +1,9 @@
 import torch
 import torch.nn as nn
+
+import os
+import logging
+
 '''
     for debugging # of parameters about 'ViT-L16'
     in thesis,
@@ -19,6 +23,19 @@ import torch.nn as nn
             -> layer:32 |   hidden size(D):1280  |   MLP size:5120   |   head:16
 '''
 from pytorch_pretrained_vit import ViT
+
+
+class logger_vit():
+    def __init__(self, file_path=os.path.curdir+'/log.log'):
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter(u'%(asctime)s - %(message)s')
+        file_handler = logging.FileHandler(filename=file_path)
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+
+    def write_log(self, log):
+        self.logger.info(log)
 
 
 def init_weights(m):
