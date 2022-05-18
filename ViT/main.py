@@ -12,86 +12,92 @@ from train_eval.train_eval import train_vit, eval_vit
 root_dir = os.path.dirname(os.path.realpath("main.py"))
 sys.path.insert(0, root_dir)
 
-from dataset.cifar10 import get_dataloader_cifar10, cls_cifar10
+from dataset.cifar10 import get_dataloader_cifar10
 from utils.utils import init_weights, get_official_pretrained_vit_models
+from utils.arg_parser import get_vit_args, print_vit_args
 from train_eval.train_eval import train_vit, eval_vit
+
 from vision_transformer import VisionTransformer
 
 
-# hyper-parameters
-DEBUG_MODE = False#True
-USE_OFFICIAL_MODEL = False#True
-offical_vit_name = "B_16_imagenet1k"
-
-epoch = 20
-batch_size = 100
-learning_rate = 2e-4 # 2*10^-4
-weight_decay = 0.1
-momentum = 0.9
-
-img_width = 32#384
-img_height = 32#384
-img_patch_size = 16
-
-N_CLASSES = len(cls_cifar10)
-HIDDEN_DIM = 768
-MLP_HIDDEN_DIM = HIDDEN_DIM * 4
-ENC_LAYERS = 12
-ENC_HEADS = 12
-ENC_DROPOUT = 0.1
+# get hyper-parameter of vit
+args = get_vit_args()
 
 
 if __name__ == "__main__":
 
-    device = 'cuda' if torch.cuda.is_available() == True else 'cpu'
     # for reproducibility
     torch.manual_seed(777)
-    if device == 'cuda':
-        torch.cuda.empty_cache()
-        torch.cuda.manual_seed_all(777)
+    if args.gpu_mode == False:
+        device = 'cpu'
+    else:
+        device = 'cuda' if torch.cuda.is_available() == True else 'cpu'
+        if device == 'cuda':
+            torch.cuda.empty_cache()
+            torch.cuda.manual_seed_all(777)
 
-    trainloader = get_dataloader_cifar10(opt_data="train", batch_size=batch_size)
-    testloader = get_dataloader_cifar10(opt_data="test", batch_size=batch_size)
+    # data loader
+    trainloader = get_dataloader_cifar10(opt_data="train", batch_size=args.batch_size)
+    testloader = get_dataloader_cifar10(opt_data="test", batch_size=args.batch_size)
 
-    # In order to compare '#' of parameters with offical ViT models
-    if USE_OFFICIAL_MODEL:
-        model = get_official_pretrained_vit_models(offical_vit_name, N_CLASSES, img_width)
-    else: # 
-        model = VisionTransformer(N_CLASSES,
-                                ENC_HEADS,
-                                ENC_LAYERS,
-                                HIDDEN_DIM,
-                                MLP_HIDDEN_DIM,
-                                img_width,
-                                img_height,
-                                patch_size=img_patch_size,
-                                dropout_rto=ENC_DROPOUT,
+    # In order to compare reproduce model with offical
+    if args.official_name != '':
+        model = get_official_pretrained_vit_models(args.official_name, args.n_cls, args.img_size)
+    else:
+        model = VisionTransformer(args.n_cls,
+                                args.n_heads,
+                                args.n_layers,
+                                args.h_d,
+                                (args.h_d*args.mlp_ratio),
+                                args.img_size,
+                                args.img_size,
+                                patch_size=args.patch_size,
+                                dropout_rto=args.d_o,
                                 device=device)
 
     # init model weights
     model.apply(init_weights)
 
-    optimizer_adam = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    optimizer_sgd = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
+    if args.optim == 'adam':
+        optimizer = optim.Adam(model.parameters(), 
+                                lr=args.lr, 
+                                betas=(0.9, 0.999),
+                                weight_decay=args.w_d)
+    else: # sgd
+        optimizer = optim.SGD(model.parameters(), 
+                                lr=args.lr, 
+                                momentum=args.momentum)
 
+    # lr scheduler
+    if args.lr_scheduler == 'consine':
+        lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                            T_max=(args.epoch//5),
+                                                            eta_min=(args.lr*1e-2))
+    else: # linear (will be added..)
+        pass
+
+    # loss function
     loss_ft = nn.CrossEntropyLoss()
 
-    # for verify vit parameters
-    if DEBUG_MODE:
+    # check '#' of model parameters
+    if args.debug_mode:
+        print_vit_args(args) # print all parameters
         print(pytorch_model_summary.summary(model, 
-                                            torch.zeros(batch_size, 3, img_width, img_height, device=device), 
+                                            torch.zeros(args.batch_size, 3, args.img_size, args.img_size, device=device), 
                                             max_depth=None,
                                             show_parent_layers=False,#True,
                                             show_input=True))
     else:
+        print_vit_args(args) # print all parameters
         # train vit
         train_vit(model, 
-                optimizer_adam, 
+                optimizer, 
+                lr_scheduler,
                 loss_ft, 
                 trainloader, 
-                N_CLASSES,
-                epoch, 
-                batch_size, 
+                args.n_cls,
+                args.epoch, 
+                args.batch_size, 
                 device=device)
         
         # evaluate vit
