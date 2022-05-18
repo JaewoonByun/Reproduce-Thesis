@@ -19,6 +19,7 @@ else: # ubuntu
 
 def train_vit(model,
               optimizer,
+              lr_scheduler,
               loss_ft,
               train_loader,
               n_classes,
@@ -40,8 +41,11 @@ def train_vit(model,
             optimizer.zero_grad()
             criterion.backward()
             optimizer.step()
-               
-        print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, loss:{criterion.item()}')
+
+            if (batch_idx*batch_size) % 10000 == 0:
+                print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, batch:{batch_idx*batch_size} loss:{criterion.item()}')
+        #print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, loss:{criterion.item()}')
+        lr_scheduler.step()
     torch.save(model.state_dict(), MODEL_PATH)
     print("total training time: {0}".format(time.time()-train_start))
     
