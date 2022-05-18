@@ -69,7 +69,7 @@ if __name__ == "__main__":
                                 momentum=args.momentum)
 
     # lr scheduler
-    if args.lr_scheduler == 'consine':
+    if args.lr_scheduler == 'cosine':
         lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                             T_max=(args.epoch//5),
                                                             eta_min=(args.lr*1e-2))
