@@ -62,6 +62,7 @@ def get_one_hot_encoding(label, n_classes=10, batch_size=64, device='cpu'):
     pre-trained vit models(name):
         B_16, B_32, L_16, L_32, B_16_imagenet1k, B_32_imagenet1k, L_16_imagenet1k, L_32_imagenet1k
 '''
-def get_official_pretrained_vit_models(name, n_classes=1000, img_size=384):
-    pretrained_vit = ViT(name=name, num_classes=n_classes, image_size=img_size, pretrained=True)
+def get_official_pretrained_vit_models(name, n_classes=1000, img_size=384, device='cpu'):
+    print(f'model:{name}, # of cls: {n_classes}, img_size: {img_size}')
+    pretrained_vit = ViT(name=name, num_classes=n_classes, image_size=img_size, pretrained=True).to(device)
     return pretrained_vit

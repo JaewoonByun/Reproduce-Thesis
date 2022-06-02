@@ -28,7 +28,30 @@ def train_vit(model,
               n_classes,
               epoch, 
               batch_size,
+              continue_train=False,
+              fine_tuning=False,
+              name_of_cls_fc='fc',
+              name_of_cls_norm='norm',
               device='cpu'):
+
+    # for training more from previous result
+    if continue_train == True:
+        if os.path.isfile(MODEL_PATH):
+            model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+
+    # for fine tuning
+    if fine_tuning == True:
+        for name, params in model.named_parameters():
+            if name == name_of_cls_fc+'.weight'\
+                or name == name_of_cls_fc+'.bias':
+                #or name == name_of_cls_norm+'.weight'\
+                #or name == name_of_cls_norm+'.bias':
+                params.requires_grad = True
+            else:
+                params.requires_grad = False # frozen pre-trained parameters
+            #print(name, params.requires_grad)
+
+    model.train()
 
     print('training vit is started !')
     logger.write_log('training vit is started !')
@@ -49,6 +72,7 @@ def train_vit(model,
             if (batch_idx*batch_size) % 10000 == 0:
                 print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, batch:{batch_idx*batch_size} loss:{criterion.item()}')
                 logger.write_log(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, batch:{batch_idx*batch_size} loss:{criterion.item()}')
+
         #print(f'[{time.strftime("%c", time.localtime())}] epoch:{epc}, loss:{criterion.item()}')
         lr_scheduler.step()
     torch.save(model.state_dict(), MODEL_PATH)
@@ -65,7 +89,7 @@ def eval_vit(model,
     true_cnt = 0
     total_cnt = 0
     # load learned model
-    model.load_state_dict(torch.load(MODEL_PATH))
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
     model.eval()
     
     with torch.no_grad():
@@ -78,7 +102,7 @@ def eval_vit(model,
             total_cnt += len(label)
     
     print('evaluation time: {0}'.format(time.time()-eval_start))
-    print('accuracy: {0}, true: {1}, total: {2}'.format(true_cnt/total_cnt, true_cnt, total_cnt))
+    print('accuracy: {0}, true: {1}, total: {2}'.format(round((true_cnt/total_cnt).item()*100.0, 2), true_cnt, total_cnt))
     logger.write_log('evaluation time: {0}'.format(time.time()-eval_start))
     logger.write_log('accuracy: {0}, true: {1}, total: {2}'.format(true_cnt/total_cnt, true_cnt, total_cnt))
 

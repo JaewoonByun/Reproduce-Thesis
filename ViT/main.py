@@ -35,6 +35,7 @@ if __name__ == "__main__":
         if device == 'cuda':
             torch.cuda.empty_cache()
             torch.cuda.manual_seed_all(777)
+    print(f'device: {device} !!!')
 
     # data loader
     trainloader = get_dataloader_cifar10(opt_data="train", batch_size=args.batch_size)
@@ -42,7 +43,11 @@ if __name__ == "__main__":
 
     # In order to compare reproduce model with offical
     if args.official_name != '':
-        model = get_official_pretrained_vit_models(args.official_name, args.n_cls, args.img_size)
+        model = get_official_pretrained_vit_models(args.official_name, 
+                                                   n_classes=args.n_cls, 
+                                                   img_size=args.img_size,
+                                                   device=device)
+        fine_tuning = True
     else:
         model = VisionTransformer(args.n_cls,
                                 args.n_heads,
@@ -54,9 +59,9 @@ if __name__ == "__main__":
                                 patch_size=args.patch_size,
                                 dropout_rto=args.d_o,
                                 device=device)
-
-    # init model weights
-    model.apply(init_weights)
+        # init model weights
+        model.apply(init_weights)
+        fine_tuning = False
 
     if args.optim == 'adam':
         optimizer = optim.Adam(model.parameters(), 
@@ -81,7 +86,7 @@ if __name__ == "__main__":
 
     # check '#' of model parameters
     if args.debug_mode:
-        print_vit_args(args) # print all parameters
+        print_vit_args(args) # print all hyper-parameters
         print(pytorch_model_summary.summary(model, 
                                             torch.zeros(args.batch_size, 3, args.img_size, args.img_size, device=device), 
                                             max_depth=None,
@@ -90,17 +95,21 @@ if __name__ == "__main__":
     else:
         print_vit_args(args) # print all parameters
         # train vit
-        train_vit(model, 
-                optimizer, 
-                lr_scheduler,
-                loss_ft, 
-                trainloader, 
-                args.n_cls,
-                args.epoch, 
-                args.batch_size, 
-                device=device)
-        
+        if args.train_mode == True:
+            train_vit(model, 
+                    optimizer, 
+                    lr_scheduler,
+                    loss_ft, 
+                    trainloader, 
+                    args.n_cls,
+                    args.epoch, 
+                    args.batch_size, 
+                    continue_train=args.continue_train,
+                    fine_tuning=fine_tuning,
+                    device=device)
+
         # evaluate vit
-        eval_vit(model,
-                testloader,
-                device=device)
+        if args.eval_mode == True:
+            eval_vit(model,
+                    testloader,
+                    device=device)

@@ -6,6 +6,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
+from torchvision.transforms.functional import InterpolationMode
 from torch.utils.data import DataLoader
 
 if platform.system() == 'Windows':
@@ -26,7 +27,7 @@ cls_cifar10 = ('plane',
 'truck')
 
 transform = transforms.Compose([
-    transforms.Resize((32, 32)),
+    transforms.Resize((384, 384), interpolation=InterpolationMode.BICUBIC),
     transforms.ToTensor(),
     #transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
 ])

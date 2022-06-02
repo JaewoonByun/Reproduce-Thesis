@@ -1,4 +1,5 @@
 import argparse
+from ast import arg
 
 
 def str2bool(v):
@@ -19,6 +20,7 @@ def get_vit_args():
 
     # hyper-parameter for debugging
     arg_parser.add_argument('--debug_mode', type=str2bool, default=False, help='in order to count "#" of model parameters')
+    # use pre-trained model
     arg_parser.add_argument('--official_name', type=str, default='',
                             help='use official vit model such as \
                             "B_16", "B_32", "L_16", "L_32", "B_16_imagenet1k", "B_32_imagenet1k", "L_16_imagenet1k", "L_32_imagenet1k"')
@@ -33,7 +35,7 @@ def get_vit_args():
     arg_parser.add_argument('--momentum', type=float, default=0.9, help='(if use sgd) momentum')
     # hyper-parameter for models
     arg_parser.add_argument('--n_cls', default=10, type=int, help='"#" of classes')
-    arg_parser.add_argument('--img_size', default=32, type=int) # width == height
+    arg_parser.add_argument('--img_size', default=384, type=int) # width == height
     arg_parser.add_argument('--patch_size', default=16, type=int)
     arg_parser.add_argument('--h_d', type=int, default=768, help='hidden dim')
     arg_parser.add_argument('--mlp_ratio', type=int, default=4, help='mlp hidden dim ratio => h.d * mlp_ratio')
@@ -41,6 +43,9 @@ def get_vit_args():
     arg_parser.add_argument('--n_heads', type=int, default=12)
     # hyper-parameter for others
     arg_parser.add_argument('--gpu_mode', type=str2bool, default=True, help='force to use "cpu"')
+    arg_parser.add_argument('--continue_train', type=str2bool, default=False, help='whether continue train the previous model or not')
+    arg_parser.add_argument('--train_mode', type=str2bool, default=True)
+    arg_parser.add_argument('--eval_mode', type=str2bool, default=True)
 
     args = arg_parser.parse_args()
     
